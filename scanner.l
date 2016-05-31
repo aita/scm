@@ -1,10 +1,11 @@
 %{
 #include <stdio.h>
+#include "parser.h"
 
 void
-yyerror(char *message)
+yyerror(const char *message)
 {
-    printf("Error: %s\n",message);
+    printf("Error: %s\n", message);
 }
 
 int
@@ -14,9 +15,29 @@ yywrap(void)
 }
 %}
 
+DIGIT                  [0-9]
+LETTER                 [a-zA-Z]
+SPECIAL_INITIAL        [!\$%&\*\/\:\<=\>\?\^\_~]
+INITIAL                {LETTER}|{SPECIAL_INITIAL}|"-"
+SUBSEQUENT             {INITIAL}|{DIGIT}|[\+\-\.@]
+PECULIAR_IDENTIFIER    [\+\-]
+IDENTIFIER             {INITIAL}{SUBSEQUENT}*|{PECULIAR_IDENTIFIER}
+
 %%
 
-"+" { printf("PLUS\n"); }
-"-" { printf("MINUS\n"); }
+"("                   { return LPAREN; }
+")"                   { return RPAREN; }
+"\."                  { return DOT; }
+[\+\-]?{DIGIT}+       { return INTEGER; }
+{IDENTIFIER}          { return SYMBOL; }
+
+[ \t]+    { ; /* skip */ }
+[\r\n]    { ; /* newline */ }
+
+.         {
+              char buf[1024];
+              sprintf(buf, "invalid character: %s", yytext);
+              yyerror(buf);
+          }
 
 %%

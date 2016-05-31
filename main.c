@@ -1,14 +1,9 @@
 #include <stdio.h>
-
-extern int yylex(void);
-extern FILE *yyin;
+#include "parser.h"
+#include "scheme.h"
 
 int
 main(int argc, char **argv)
 {
-    yyin = stdin;
-    while (yylex()) {
-
-    }
-    return 0;
+    return yyparse();
 }
