@@ -1,6 +1,7 @@
 %{
 #include "scheme.h"
 #include <stdio.h>
+#include <string.h>
 
 #define YYSTYPE ScmObject*
 
@@ -20,12 +21,14 @@ int yylex(void);
 %token INTEGER
 %token SYMBOL
 
+%start toplevel
+
 %%
 
 toplevel:
-    | expr toplevel
+    | toplevel expr
     {
-        scheme_eval($1);
+        scheme_eval($2);
     }
 
 expr: atom | pair
@@ -37,6 +40,11 @@ atom: SYMBOL
     | INTEGER
     {
         $$ = scheme_int(atoi(yytext));
+    }
+    | STRING
+    {
+        yytext[strlen(yytext)-1] = '\0';
+        $$ = scheme_string(++yytext);
     }
     | LPAREN RPAREN
     {

@@ -17,11 +17,16 @@ yywrap(void)
 
 DIGIT                  [0-9]
 LETTER                 [a-zA-Z]
+INLINE_WHITESPACE      [ \t]
+
 SPECIAL_INITIAL        [!\$%&\*\/\:\<=\>\?\^\_~]
 INITIAL                {LETTER}|{SPECIAL_INITIAL}|"-"
 SUBSEQUENT             {INITIAL}|{DIGIT}|[\+\-\.@]
 PECULIAR_IDENTIFIER    [\+\-]
 IDENTIFIER             {INITIAL}{SUBSEQUENT}*|{PECULIAR_IDENTIFIER}
+QUOTE                  \'
+DOUBLE_QUOTE           \"
+STRING                 {DOUBLE_QUOTE}({LETTER}|{INLINE_WHITESPACE})*{DOUBLE_QUOTE}
 
 %%
 
@@ -30,6 +35,7 @@ IDENTIFIER             {INITIAL}{SUBSEQUENT}*|{PECULIAR_IDENTIFIER}
 "\."                  { return DOT; }
 [\+\-]?{DIGIT}+       { return INTEGER; }
 {IDENTIFIER}          { return SYMBOL; }
+{STRING}              { return STRING; }
 
 [ \t]+    { ; /* skip */ }
 [\r\n]    { ; /* newline */ }

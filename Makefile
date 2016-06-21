@@ -1,11 +1,17 @@
 CC=gcc
 LEX=flex
 YACC=bison
-PROGRAM=scm
-OBJS=main.o scanner.o parser.o scheme.o
+TARGET=scm
+OBJS=main.o scanner.o parser.o scheme.o print.o string.o
 LIBS=
 
-$(PROGRAM): $(OBJS)
+all: $(TARGET)
+
+.PHONY: debug
+debug:
+	make all "CFLAGS=-g"
+
+$(TARGET): $(OBJS)
 	$(CC) -o $@ $(OBJS) $(LIBS)
 
 scanner.c: scanner.l parser.h
@@ -14,17 +20,15 @@ scanner.c: scanner.l parser.h
 parser.c parser.h: parser.y
 	$(YACC) -o parser.c -d $<
 
-scheme.c: scheme.h
-main.c: scheme.h parser.h
-
-main.o: main.c
-scanner.o: scanner.c
-parser.o: parser.c
-scheme.o: scheme.c
-
+main.o: main.c scheme.h parser.h
+scanner.o: scanner.c scheme.h
+parser.o: parser.c parser.h scheme.h
+scheme.o: scheme.c scheme.h
+print.o: print.c scheme.h
+string.o: string.c scheme.h
 
 .PHONY: clean
 clean:
-	rm -rf $(PROGRAM)
+	rm -rf $(TARGET)
 	rm -rf $(OBJS)
 	rm -f scanner.c parser.c parser.h
