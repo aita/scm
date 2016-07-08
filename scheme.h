@@ -19,6 +19,9 @@
 
 #define SCM_INT(obj) (((ScmInt *)obj)->val)
 #define SCM_SYMBOL_NAME(obj) (ScmObject *)(((ScmSymbol *)obj)->name)
+#define SCM_ERROR_MESSAGE(obj) (ScmObject *)(((ScmError *)obj)->message)
+
+#define SCM_ERRORP(obj) (SCM_TYPE(obj) == SCM_TYPE_ERROR)
 
 #define SCM_CAR(obj) (((ScmPair *)obj)->car)
 #define SCM_CDR(obj) (((ScmPair *)obj)->cdr)
@@ -38,6 +41,7 @@
 #define SCM_TYPE_PROCEDURE 6
 #define SCM_TYPE_CLOSURE   7
 #define SCM_TYPE_SYNTAX    8
+#define SCM_TYPE_ERROR     9
 
 struct ScmObject;
 typedef struct ScmObject ScmObject;
@@ -84,6 +88,11 @@ typedef struct ScmSyntax {
     scheme_function_t fn;
 } ScmSyntax;
 
+typedef struct ScmError {
+    SCM_OBJECT_HEADER
+    ScmString *message;
+} ScmError;
+
 typedef struct SCM {
     ScmObject *env;
     ScmObject *symbols;
@@ -96,7 +105,6 @@ ScmObject *scheme_eval(ScmObject *obj);
 void scheme_register(const char *name, ScmObject *obj);
 ScmObject *scheme_apply(ScmObject *proc, ScmObject *args);
 int scheme_print_object(ScmObject *obj);
-void scheme_error(const char *message);
 
 // scheme object constructors
 ScmObject *scheme_int(int i);
@@ -105,12 +113,10 @@ ScmObject *scheme_symbol(const char *name);
 ScmObject *scheme_cons(ScmObject *car, ScmObject *cdr);
 ScmObject *scheme_procedure(scheme_function_t fn);
 ScmObject *scheme_syntax(scheme_function_t fn);
+ScmObject *scheme_error(const char *message);
 
 // string functions
 int scheme_strcmp(const ScmObject *obj, const char *s);
-
-// syntax functions
-ScmObject *scheme_if(ScmObject *expr);
 
 // scheme procedures
 ScmObject *scheme_print(ScmObject *args);

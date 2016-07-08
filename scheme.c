@@ -4,6 +4,11 @@
 
 SCM *scheme;
 
+// syntax functions
+ScmObject *scheme_syntax_if(ScmObject *expr);
+ScmObject *scheme_syntax_define(ScmObject *expr);
+
+// static functions
 static ScmObject *find_symbol(const char *name);
 static ScmObject *lookup(ScmObject *obj);
 static ScmObject *scheme_eval_symbol(ScmObject *obj);
@@ -22,7 +27,8 @@ scheme_init()
     scheme->symbols = SCM_NULL;
 
     // register default procedures
-    scheme_register("if", scheme_syntax(scheme_if));
+    scheme_register("if", scheme_syntax(scheme_syntax_if));
+    scheme_register("define", scheme_syntax(scheme_syntax_define));
     scheme_register("print", scheme_procedure(scheme_print));
     scheme_register("+", scheme_procedure(scheme_plus));
     scheme_register("-", scheme_procedure(scheme_minus));
@@ -82,21 +88,20 @@ scheme_apply(ScmObject *proc, ScmObject *args)
     case SCM_TYPE_PROCEDURE:
         if (args != SCM_NULL) {
             args = scheme_eval_arguments(args);
-            if (args == SCM_NULL)
-                return SCM_NULL;
+            if (SCM_ERRORP(args))
+                return args;
         }
         return scheme_apply_procedure(proc, args);
     default:
-        fprintf(stderr, "Wrong type to apply.\n");
-        return SCM_NULL;
+        return scheme_error("Wrong type to apply.");
     }
 }
+
 static ScmObject *
 scheme_apply_procedure(ScmObject *proc, ScmObject *args)
 {
     return ((ScmProcedure *)proc)->fn(args);
 }
-
 
 static ScmObject *
 scheme_eval_arguments(ScmObject *args)
@@ -109,8 +114,7 @@ scheme_eval_arguments(ScmObject *args)
         args = SCM_CDR(args);
         scheme_tag_t tag = SCM_TYPE(args);
         if (tag != SCM_TYPE_PAIR && tag != SCM_TYPE_NULL) {
-            fprintf(stderr, "syntax error");
-            return SCM_NULL;
+            return scheme_error("syntax error");
         }
         if (args == SCM_NULL) {
             break;
@@ -124,13 +128,23 @@ scheme_eval_arguments(ScmObject *args)
 ScmObject *
 scheme_eval(ScmObject *obj)
 {
+    ScmObject *ret;
     switch (SCM_TYPE(obj)) {
     case SCM_TYPE_SYMBOL:
-        return scheme_eval_symbol(obj);
+        ret = scheme_eval_symbol(obj);
+        break;
     case SCM_TYPE_PAIR:
-        return scheme_eval_pair(obj);
+        ret = scheme_eval_pair(obj);
+        break;
+    default:
+        ret = obj;
     }
-    return obj;
+    if (SCM_ERRORP(ret)) {
+        ScmString *message = (ScmString *)SCM_ERROR_MESSAGE(ret);
+        fwrite(message->s, 1, message->len, stderr);
+        fprintf(stderr, "\n");
+    }
+    return ret;
 }
 
 static ScmObject *
@@ -139,10 +153,13 @@ scheme_eval_symbol(ScmObject *obj)
     ScmObject *var = lookup(obj);
     if (var == SCM_NULL) {
         ScmSymbol *symbol = (ScmSymbol *)obj;
+        /*
         fprintf(stderr, "Unbound variable: ");
         fwrite(symbol->name->s, 1, symbol->name->len, stderr);
         fprintf(stderr, "\n");
         return SCM_NULL;
+        */
+        return scheme_error("unbound variable");
     }
     return var;
 }
@@ -173,10 +190,13 @@ scheme_eval_syntax(ScmObject *syntax, ScmObject *expr)
     return ((ScmSyntax *)syntax)->fn(expr);
 }
 
-void
+ScmObject *
 scheme_error(const char *message)
 {
-    fputs(message, stderr);
+    ScmError *obj = SCM_NEW_OBJECT(ScmError);
+    SCM_SET_TAG(obj, SCM_TYPE_ERROR);
+    obj->message = (ScmString *)scheme_string(message);
+    return (ScmObject *)obj;
 }
 
 ScmObject *

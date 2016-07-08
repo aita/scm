@@ -1,7 +1,7 @@
 #include <scheme.h>
 
 ScmObject *
-scheme_if(ScmObject *expr)
+scheme_syntax_if(ScmObject *expr)
 {
     if (expr == SCM_NULL)
         goto error;
@@ -24,6 +24,23 @@ scheme_if(ScmObject *expr)
     }
 
 error:
-    scheme_error("syntax error");
-    return SCM_NULL;
+    return scheme_error("syntax error");
+;
+}
+
+ScmObject *
+scheme_syntax_define(ScmObject *expr)
+{
+    if (expr == SCM_NULL)
+        goto error;
+    if (SCM_CDR(expr) == SCM_NULL)
+        goto error;
+    if (SCM_CDDR(expr) != SCM_NULL)
+        goto error;
+
+    ScmObject *symbol = SCM_CAR(expr);
+    ScmObject *val = SCM_CADR(expr);
+
+error:
+    return scheme_error("syntax error");
 }
