@@ -6,7 +6,7 @@
 #define scheme_free free
 #define SCM_NULL NULL
 
-#define SCM_OBJECT_HEADER unsigned int tag;
+#define SCM_OBJECT_HEADER scheme_tag_t tag;
 #define SCM_TAG(OBJ) ((OBJ != SCM_NULL) ? OBJ->tag : SCM_TYPE_NULL)
 
 #define SCM_NEW_OBJECT(SCM_TYPE) \
@@ -17,7 +17,7 @@
         OBJ->tag = TAG; \
     } while(0)
 
-#define SCM_INT(obj) (obj->val)
+#define SCM_INT(obj) (((ScmInt *)obj)->val)
 #define SCM_SYMBOL_NAME(obj) (ScmObject *)(((ScmSymbol *)obj)->name)
 
 #define SCM_CAR(obj) (((ScmPair *)obj)->car)
@@ -36,9 +36,10 @@ struct ScmObject;
 typedef struct ScmObject ScmObject;
 
 typedef int scheme_int_t;
+// typedef unsigned long scheme_uint_t;
+typedef unsigned long  scheme_tag_t;
 typedef unsigned char scheme_char_t;
 typedef ScmObject *(*scheme_function_t)(ScmObject *);
-
 
 typedef struct ScmObject {
     SCM_OBJECT_HEADER
@@ -79,20 +80,24 @@ typedef struct SCM {
 SCM *scheme;
 
 int scheme_init();
-int scheme_eval(ScmObject *obj);
-void scheme_register(ScmObject *symbol, ScmObject *obj);
+ScmObject *scheme_eval(ScmObject *obj);
+void scheme_register(const char *name, ScmObject *obj);
+ScmObject *scheme_apply(ScmObject *proc, ScmObject *args);
+int scheme_print_object(ScmObject *obj);
 
 // scheme object constructors
-ScmObject * scheme_int(int i);
-ScmObject * scheme_string(const char *s);
-ScmObject * scheme_symbol(const char *name);
-ScmObject * scheme_cons(ScmObject *car, ScmObject *cdr);
-ScmObject * scheme_procedure(scheme_function_t fn);
+ScmObject *scheme_int(int i);
+ScmObject *scheme_string(const char *s);
+ScmObject *scheme_symbol(const char *name);
+ScmObject *scheme_cons(ScmObject *car, ScmObject *cdr);
+ScmObject *scheme_procedure(scheme_function_t fn);
 
 // string functions
 int scheme_strcmp(const ScmObject *obj, const char *s);
 
 // scheme procedures
-ScmObject * scheme_print(ScmObject *o);
+ScmObject *scheme_print(ScmObject *args);
+ScmObject *scheme_plus(ScmObject *args);
+ScmObject *scheme_minus(ScmObject *args);
 
 #endif  /* _SCHEME_H_ */

@@ -7,10 +7,9 @@ static void scheme_print_symbol(ScmObject *o);
 static void scheme_print_string(ScmObject *o);
 static void scheme_print_pair(ScmObject *o);
 
-ScmObject *
-scheme_print(ScmObject *args)
+int
+scheme_print_object(ScmObject *obj)
 {
-    ScmObject *obj = SCM_CAR(args);
     switch (SCM_TAG(obj)) {
     case SCM_TYPE_NULL:
         printf("()");
@@ -27,16 +26,30 @@ scheme_print(ScmObject *args)
     case SCM_TYPE_PAIR:
         scheme_print_pair(obj);
         break;
+    case SCM_TYPE_PROCEDURE:
+        printf("<procedure: %x>", obj);
+        break;
     default:
         printf("<unknown>");
     }
-    return SCM_NULL;
+    return 0;
+}
+
+ScmObject *
+scheme_print(ScmObject *args)
+{
+    if (SCM_CDR(args) != SCM_NULL) {
+        fprintf(stderr, "Invalid number of arguments");
+        return SCM_NULL;
+    }
+    scheme_print_object(SCM_CAR(args));
+    puts("");
 }
 
 static void
 scheme_print_int(ScmObject *o)
 {
-    printf("%lu", ((ScmInt *)o)->val);
+    printf("%ld", ((ScmInt *)o)->val);
 }
 
 static void
@@ -62,13 +75,13 @@ scheme_print_pair(ScmObject *o)
     printf("(");
     while (1) {
         ScmPair *pair = (ScmPair *)next;
-        scheme_print(pair->car);
+        scheme_print_object(pair->car);
         next = pair->cdr;
         if (next == SCM_NULL) {
             break;
         } else if (SCM_TAG(next) != SCM_TYPE_PAIR) {
             printf(" . ");
-            scheme_print(pair->cdr);
+            scheme_print_object(pair->cdr);
             break;
         } else {
             printf(" ");

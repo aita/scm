@@ -10,7 +10,6 @@ main(int argc, char **argv)
 {
     if (!scheme_init())
         return 1;
-
     if (argc > 1) {
         yyin = fopen(argv[1], "r");
         if (yyin == NULL) {
@@ -19,6 +18,5 @@ main(int argc, char **argv)
         }
     }
     int ret = yyparse();
-    // scheme_print(scheme->symbols);
     return ret;
 }

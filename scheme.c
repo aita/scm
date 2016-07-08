@@ -4,6 +4,12 @@
 
 SCM *scheme;
 
+static ScmObject *find_symbol(const char *name);
+static ScmObject *lookup(ScmObject *obj);
+static ScmObject *scheme_eval_symbol(ScmObject *obj);
+static ScmObject *scheme_eval_arguments(ScmObject *args);
+static ScmObject *scheme_apply_procedure(ScmObject *proc, ScmObject *args);
+
 int
 scheme_init()
 {
@@ -14,31 +20,39 @@ scheme_init()
     scheme->symbols = SCM_NULL;
 
     // register default procedures
-    scheme_register(scheme_symbol("print"), scheme_procedure(scheme_print));
+    scheme_register("print", scheme_procedure(scheme_print));
+    scheme_register("+", scheme_procedure(scheme_plus));
+    scheme_register("-", scheme_procedure(scheme_minus));
 
     return 1;
 }
 
-ScmObject *
+static ScmObject *
 find_symbol(const char *name)
 {
     ScmObject *o;
+    ScmObject *ret = SCM_NULL;
     for (o = scheme->symbols; o != SCM_NULL; o = SCM_CDR(o)) {
         ScmObject *symbol = SCM_CAR(o);
-        if (!scheme_strcmp(SCM_SYMBOL_NAME(symbol), name))
-            return symbol;
+        if (scheme_strcmp(SCM_SYMBOL_NAME(symbol), name) == 0) {
+            ret = symbol;
+            break;
+        }
     }
-    return SCM_NULL;
+    return ret;
 }
 
 void
-scheme_register(ScmObject *symbol, ScmObject *obj)
+scheme_register(const char *name, ScmObject *obj)
 {
     ScmObject *p;
     ScmObject *bound = SCM_NULL;
+    ScmObject *symbol = scheme_symbol(name);
     for (p = scheme->env; p != SCM_NULL; p = SCM_CDR(p)) {
-        if ((bound = SCM_CAR(p)) == symbol)
+        if (SCM_CAR(p) == symbol) {
+            bound = SCM_CAR(p);
             break;
+        }
     }
     if (bound != SCM_NULL) {
         SCM_CDR(bound) = obj;
@@ -59,42 +73,82 @@ lookup(ScmObject *symbol)
     return SCM_NULL;
 }
 
-int
-scheme_apply(ScmObject *obj)
+ScmObject *
+scheme_apply(ScmObject *proc, ScmObject *args)
 {
-    ScmSymbol *symbol = (ScmSymbol *)SCM_CAR(obj);
-    if (SCM_TAG(symbol) != SCM_TYPE_SYMBOL) {
+    if (SCM_TAG(proc) == SCM_TYPE_SYMBOL) {
+        ScmObject *var = scheme_eval_symbol(proc);
+        if (var == SCM_NULL) {
+            return SCM_NULL;
+        }
+        proc = var;
+    }
+    switch (SCM_TAG(proc)) {
+    case SCM_TYPE_PROCEDURE:
+        if (args != SCM_NULL) {
+            args = scheme_eval_arguments(args);
+            if (args == SCM_NULL)
+                return SCM_NULL;
+        }
+        return scheme_apply_procedure(proc, args);
+    default:
         fprintf(stderr, "Wrong type to apply.\n");
-        return 0;
+        return SCM_NULL;
     }
-    ScmObject *var = lookup((ScmObject *)symbol);
-    if (SCM_TAG(var) != SCM_TYPE_PROCEDURE) {
-        fprintf(stderr, "Wrong type to apply.\n");
-        return 0;
-    }
-    if (var == SCM_NULL) {
-        fprintf(stderr, "Unbound variable: ");
-        fwrite(symbol->name->s, 1, symbol->name->len, stderr);
-        fprintf(stderr, "\n");
-        return 0;
-    }
-    ScmProcedure *proc = (ScmProcedure *)var;
-    proc->fn(SCM_CDR(obj));
-    return 1;
 }
 
-int
+static ScmObject *
+scheme_eval_arguments(ScmObject *args)
+{
+    ScmObject *ret = scheme_cons(SCM_NULL, SCM_NULL);
+    ScmObject *cur = ret;
+    for(;;) {
+        SCM_CAR(cur) = scheme_eval(SCM_CAR(args));
+        // check type of cdr is a pair or null
+        args = SCM_CDR(args);
+        scheme_tag_t tag = SCM_TAG(args);
+        if (tag != SCM_TYPE_PAIR && tag != SCM_TYPE_NULL) {
+            fprintf(stderr, "syntax error");
+            return SCM_NULL;
+        }
+        if (args == SCM_NULL) {
+            break;
+        }
+        SCM_CDR(cur) = scheme_cons(SCM_NULL, SCM_NULL);
+        cur = SCM_CDR(cur);
+    }
+    return ret;
+}
+
+static ScmObject *
+scheme_apply_procedure(ScmObject *proc, ScmObject *args)
+{
+    return ((ScmProcedure *)proc)->fn(args);
+}
+
+ScmObject *
 scheme_eval(ScmObject *obj)
 {
     switch (SCM_TAG(obj)) {
+    case SCM_TYPE_SYMBOL:
+        return scheme_eval_symbol(obj);
     case SCM_TYPE_PAIR:
-        scheme_apply(obj);
-        break;
-    default:
-        scheme_print(obj);
-        printf("\n");
+        return scheme_apply(SCM_CAR(obj), SCM_CDR(obj));
     }
-    return 0;
+    return obj;
+}
+
+static ScmObject *
+scheme_eval_symbol(ScmObject *obj) {
+    ScmObject *var = lookup(obj);
+    if (var == SCM_NULL) {
+        ScmSymbol *symbol = (ScmSymbol *)obj;
+        fprintf(stderr, "Unbound variable: ");
+        fwrite(symbol->name->s, 1, symbol->name->len, stderr);
+        fprintf(stderr, "\n");
+        return SCM_NULL;
+    }
+    return var;
 }
 
 ScmObject *
@@ -109,11 +163,10 @@ scheme_int(int i)
 ScmObject *
 scheme_symbol(const char *name)
 {
-    ScmSymbol *obj;
-
-    if ((obj = (ScmSymbol *)find_symbol(name)) != SCM_NULL)
+    ScmSymbol *obj = (ScmSymbol *)find_symbol(name);
+    if (obj != SCM_NULL) {
         return (ScmObject *)obj;
-
+    }
     obj = SCM_NEW_OBJECT(ScmSymbol);
     SCM_SET_TAG(obj, SCM_TYPE_SYMBOL);
     obj->name = (ScmString *)scheme_string(name);
