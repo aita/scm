@@ -39,7 +39,11 @@ scheme_syntax_define(ScmObject *expr)
         goto error;
 
     ScmObject *symbol = SCM_CAR(expr);
-    ScmObject *val = SCM_CADR(expr);
+    ScmObject *value = scheme_eval(SCM_CADR(expr));
+    if (SCM_ERRORP(value))
+        return value;
+    scheme_define(symbol, value);
+    return value;
 
 error:
     return scheme_error("syntax error");

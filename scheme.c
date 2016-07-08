@@ -11,6 +11,7 @@ ScmObject *scheme_syntax_define(ScmObject *expr);
 // static functions
 static ScmObject *find_symbol(const char *name);
 static ScmObject *lookup(ScmObject *obj);
+static ScmObject *lookup_cell(ScmObject *obj);
 static ScmObject *scheme_eval_symbol(ScmObject *obj);
 static ScmObject *scheme_eval_pair(ScmObject *obj);
 static ScmObject *scheme_eval_syntax(ScmObject *syntax, ScmObject *expr);
@@ -50,35 +51,43 @@ find_symbol(const char *name)
     return ret;
 }
 
-void
-scheme_register(const char *name, ScmObject *obj)
-{
-    ScmObject *p;
-    ScmObject *bound = SCM_NULL;
-    ScmObject *symbol = scheme_symbol(name);
-    for (p = scheme->env; p != SCM_NULL; p = SCM_CDR(p)) {
-        if (SCM_CAR(p) == symbol) {
-            bound = SCM_CAR(p);
-            break;
-        }
-    }
-    if (bound != SCM_NULL) {
-        SCM_CDR(bound) = obj;
-    } else {
-        scheme->env = scheme_cons(scheme_cons(symbol, obj), scheme->env);
-    }
-}
-
 static ScmObject *
 lookup(ScmObject *symbol)
 {
+    ScmObject *cell = lookup_cell(symbol);
+    if (cell != SCM_NULL)
+        return SCM_CDR(cell);
+    return SCM_NULL;
+}
+
+static ScmObject *
+lookup_cell(ScmObject *symbol)
+{
     ScmObject *p;
     for (p = scheme->env; p != SCM_NULL; p = SCM_CDR(p)) {
-        ScmObject *pair = SCM_CAR(p);
-        if (SCM_CAR(pair) == symbol)
-            return SCM_CDR(pair);
+        ScmObject *cell = SCM_CAR(p);
+        if (SCM_CAR(cell) == symbol)
+            return cell;
     }
     return SCM_NULL;
+}
+
+void
+scheme_define(ScmObject *symbol, ScmObject *value)
+{
+    ScmObject *cell = lookup_cell(symbol);
+    if (cell != SCM_NULL) {
+        SCM_CDR(cell) = value;
+    } else {
+        scheme->env = scheme_cons(scheme_cons(symbol, value), scheme->env);
+    }
+}
+
+void
+scheme_register(const char *name, ScmObject *obj)
+{
+    ScmObject *symbol = scheme_symbol(name);
+    scheme_define(symbol, obj);
 }
 
 ScmObject *
@@ -128,7 +137,7 @@ scheme_eval_arguments(ScmObject *args)
 ScmObject *
 scheme_eval(ScmObject *obj)
 {
-    ScmObject *ret;
+    ScmObject *ret = SCM_NULL;
     switch (SCM_TYPE(obj)) {
     case SCM_TYPE_SYMBOL:
         ret = scheme_eval_symbol(obj);
@@ -181,6 +190,8 @@ scheme_eval_pair(ScmObject *obj)
     case SCM_TYPE_PROCEDURE:
     case SCM_TYPE_CLOSURE:
         return scheme_apply(car, SCM_CDR(obj));
+    default:
+        return scheme_error("syntax error");
     }
 }
 

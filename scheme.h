@@ -7,7 +7,7 @@
 #define SCM_NULL NULL
 
 #define SCM_OBJECT_HEADER scheme_tag_t tag;
-#define SCM_TYPE(OBJ) ((OBJ != SCM_NULL) ? OBJ->tag : SCM_TYPE_NULL)
+#define SCM_TYPE(obj) ((obj != SCM_NULL) ? obj->tag : SCM_TYPE_NULL)
 
 #define SCM_NEW_OBJECT(SCM_TYPE) \
     (SCM_TYPE *)scheme_malloc(sizeof(SCM_TYPE))
@@ -101,8 +101,9 @@ typedef struct SCM {
 SCM *scheme;
 
 int scheme_init();
-ScmObject *scheme_eval(ScmObject *obj);
+void scheme_define(ScmObject *symbol, ScmObject *value);
 void scheme_register(const char *name, ScmObject *obj);
+ScmObject *scheme_eval(ScmObject *obj);
 ScmObject *scheme_apply(ScmObject *proc, ScmObject *args);
 int scheme_print_object(ScmObject *obj);
 
