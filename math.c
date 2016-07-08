@@ -1,4 +1,4 @@
-#include "scheme.h"
+#include <scheme.h>
 
 ScmObject *
 scheme_plus(ScmObject *args)
@@ -7,7 +7,7 @@ scheme_plus(ScmObject *args)
     ScmObject *next;
     for (next = args; next != SCM_NULL; next = SCM_CDR(next)) {
         ScmObject *obj = SCM_CAR(next);
-        if (SCM_TAG(obj) != SCM_TYPE_INT) {
+        if (SCM_TYPE(obj) != SCM_TYPE_INT) {
             return SCM_NULL;
         }
         SCM_INT(ret) += SCM_INT(obj);
@@ -23,12 +23,12 @@ scheme_minus(ScmObject *args)
 
     ScmObject *next;
     ScmObject *ret = SCM_CAR(args);
-    if (SCM_TAG(ret) != SCM_TYPE_INT) {
+    if (SCM_TYPE(ret) != SCM_TYPE_INT) {
         return SCM_NULL;
     }
     for (next = SCM_CDR(args); next != SCM_NULL; next = SCM_CDR(next)) {
         ScmObject *obj = SCM_CAR(next);
-        if (SCM_TAG(obj) != SCM_TYPE_INT) {
+        if (SCM_TYPE(obj) != SCM_TYPE_INT) {
             return SCM_NULL;
         }
         SCM_INT(ret) -= SCM_INT(obj);

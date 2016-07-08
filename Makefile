@@ -2,14 +2,14 @@ CC=gcc
 LEX=flex
 YACC=bison
 TARGET=scm
-OBJS=main.o scanner.o parser.o scheme.o print.o string.o math.o
+OBJS=main.o scanner.o parser.o scheme.o syntax.o print.o string.o math.o
 LIBS=
+CFLAGS+=-I.
 
 all: $(TARGET)
 
-.PHONY: debug
-debug:
-	make all "CFLAGS=-g"
+debug: CFLAGS+=-g
+debug: $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(CC) -o $@ $(OBJS) $(LIBS)
@@ -24,6 +24,7 @@ main.o: main.c scheme.h parser.h
 scanner.o: scanner.c scheme.h
 parser.o: parser.c parser.h scheme.h
 scheme.o: scheme.c scheme.h
+syntax.o: syntax.c scheme.h
 print.o: print.c scheme.h
 string.o: string.c scheme.h
 math.o: math.c scheme.h

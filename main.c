@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
-#include "parser.h"
-#include "scheme.h"
+#include <scheme.h>
+#include <parser.h>
 
 extern FILE *yyin;
 

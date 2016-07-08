@@ -1,4 +1,4 @@
-#include "scheme.h"
+#include <scheme.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -10,7 +10,7 @@ static void scheme_print_pair(ScmObject *o);
 int
 scheme_print_object(ScmObject *obj)
 {
-    switch (SCM_TAG(obj)) {
+    switch (SCM_TYPE(obj)) {
     case SCM_TYPE_NULL:
         printf("()");
         break;
@@ -79,7 +79,7 @@ scheme_print_pair(ScmObject *o)
         next = pair->cdr;
         if (next == SCM_NULL) {
             break;
-        } else if (SCM_TAG(next) != SCM_TYPE_PAIR) {
+        } else if (SCM_TYPE(next) != SCM_TYPE_PAIR) {
             printf(" . ");
             scheme_print_object(pair->cdr);
             break;
