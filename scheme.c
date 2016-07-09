@@ -154,7 +154,7 @@ scheme_eval_arguments(ScmObject *args, ScmObject *env)
         }
         if (!SCM_PAIRP(args)) {
             scheme_error("syntax error");
-            return;
+            return SCM_NULL;
         }
         SCM_CDR(cur) = scheme_cons(SCM_NULL, SCM_NULL);
         cur = SCM_CDR(cur);
@@ -242,7 +242,6 @@ scheme_error(const char *message)
     err->message = (ScmString *)scheme_string(message);
     scheme->err = (ScmObject *)err;
     longjmp(scheme->jmp, 1);
-    return (ScmObject *)err;
 }
 
 ScmObject *
