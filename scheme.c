@@ -27,7 +27,7 @@ scheme_init()
     scheme->env = SCM_NULL;
     scheme->symbols = SCM_NULL;
 
-    // register default procedures
+    // register syntax and default procedures
     scheme_register("if", scheme_syntax(scheme_syntax_if));
     scheme_register("define", scheme_syntax(scheme_syntax_define));
     scheme_register("print", scheme_procedure(scheme_print));
@@ -41,7 +41,7 @@ find_symbol(const char *name)
 {
     ScmObject *o;
     ScmObject *ret = SCM_NULL;
-    for (o = scheme->symbols; o != SCM_NULL; o = SCM_CDR(o)) {
+    for (o = scheme->symbols; !SCM_NULLP(o); o = SCM_CDR(o)) {
         ScmObject *symbol = SCM_CAR(o);
         if (scheme_strcmp(SCM_SYMBOL_NAME(symbol), name) == 0) {
             ret = symbol;
