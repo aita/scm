@@ -64,7 +64,7 @@ static ScmObject *
 lookup_cell(ScmObject *symbol)
 {
     ScmObject *p;
-    for (p = scheme->env; p != SCM_NULL; p = SCM_CDR(p)) {
+    for (p = scheme->env; !SCM_NULLP(p); p = SCM_CDR(p)) {
         ScmObject *cell = SCM_CAR(p);
         if (SCM_CAR(cell) == symbol)
             return cell;
@@ -76,7 +76,7 @@ void
 scheme_define(ScmObject *symbol, ScmObject *value)
 {
     ScmObject *cell = lookup_cell(symbol);
-    if (cell != SCM_NULL) {
+    if (!SCM_NULLP(cell)) {
         SCM_CDR(cell) = value;
     } else {
         scheme->env = scheme_cons(scheme_cons(symbol, value), scheme->env);
@@ -95,7 +95,7 @@ scheme_apply(ScmObject *proc, ScmObject *args)
 {
     switch (SCM_TYPE(proc)) {
     case SCM_TYPE_PROCEDURE:
-        if (args != SCM_NULL) {
+        if (!SCM_NULLP(args)) {
             args = scheme_eval_arguments(args);
             if (SCM_ERRORP(args))
                 return args;
@@ -117,16 +117,15 @@ scheme_eval_arguments(ScmObject *args)
 {
     ScmObject *ret = scheme_cons(SCM_NULL, SCM_NULL);
     ScmObject *cur = ret;
-    for(;;) {
+    for (;;) {
         SCM_CAR(cur) = scheme_eval(SCM_CAR(args));
         // check type of cdr is a pair or null
         args = SCM_CDR(args);
-        scheme_tag_t tag = SCM_TYPE(args);
-        if (tag != SCM_TYPE_PAIR && tag != SCM_TYPE_NULL) {
-            return scheme_error("syntax error");
-        }
-        if (args == SCM_NULL) {
+        if (SCM_NULLP(args)) {
             break;
+        }
+        if (!SCM_PAIRP(args)) {
+            return scheme_error("syntax error");
         }
         SCM_CDR(cur) = scheme_cons(SCM_NULL, SCM_NULL);
         cur = SCM_CDR(cur);
@@ -160,7 +159,7 @@ static ScmObject *
 scheme_eval_symbol(ScmObject *obj)
 {
     ScmObject *var = lookup(obj);
-    if (var == SCM_NULL) {
+    if (SCM_NULLP(var)) {
         ScmSymbol *symbol = (ScmSymbol *)obj;
         /*
         fprintf(stderr, "Unbound variable: ");
@@ -177,9 +176,9 @@ static ScmObject *
 scheme_eval_pair(ScmObject *obj)
 {
     ScmObject *car = SCM_CAR(obj);
-    if (SCM_TYPE(car) == SCM_TYPE_SYMBOL) {
+    if (SCM_SYMBOLP(car)) {
         ScmObject *var = scheme_eval_symbol(car);
-        if (var == SCM_NULL) {
+        if (SCM_NULLP(var)) {
             return SCM_NULL;
         }
         car = var;
@@ -204,7 +203,7 @@ scheme_eval_syntax(ScmObject *syntax, ScmObject *expr)
 ScmObject *
 scheme_error(const char *message)
 {
-    ScmError *obj = SCM_NEW_OBJECT(ScmError);
+    ScmError *obj = SCM_NEW(ScmError);
     SCM_SET_TAG(obj, SCM_TYPE_ERROR);
     obj->message = (ScmString *)scheme_string(message);
     return (ScmObject *)obj;
@@ -213,7 +212,7 @@ scheme_error(const char *message)
 ScmObject *
 scheme_int(int i)
 {
-    ScmInt *obj = SCM_NEW_OBJECT(ScmInt);
+    ScmInt *obj = SCM_NEW(ScmInt);
     SCM_SET_TAG(obj, SCM_TYPE_INT);
     obj->val = i;
     return (ScmObject *)obj;
@@ -223,10 +222,10 @@ ScmObject *
 scheme_symbol(const char *name)
 {
     ScmSymbol *obj = (ScmSymbol *)find_symbol(name);
-    if (obj != SCM_NULL) {
+    if (!SCM_NULLP(obj)) {
         return (ScmObject *)obj;
     }
-    obj = SCM_NEW_OBJECT(ScmSymbol);
+    obj = SCM_NEW(ScmSymbol);
     SCM_SET_TAG(obj, SCM_TYPE_SYMBOL);
     obj->name = (ScmString *)scheme_string(name);
     scheme->symbols = scheme_cons((ScmObject *)obj, scheme->symbols);
@@ -236,7 +235,7 @@ scheme_symbol(const char *name)
 ScmObject *
 scheme_cons(ScmObject *car, ScmObject *cdr)
 {
-    ScmPair *obj = SCM_NEW_OBJECT(ScmPair);
+    ScmPair *obj = SCM_NEW(ScmPair);
     SCM_SET_TAG(obj, SCM_TYPE_PAIR);
     obj->car = car;
     obj->cdr = cdr;
@@ -246,7 +245,7 @@ scheme_cons(ScmObject *car, ScmObject *cdr)
 ScmObject *
 scheme_string(const char *s)
 {
-    ScmString *obj = SCM_NEW_OBJECT(ScmString);
+    ScmString *obj = SCM_NEW(ScmString);
     SCM_SET_TAG(obj, SCM_TYPE_STRING);
     obj->len = strlen(s);
     obj->s = scheme_malloc(obj->len);
@@ -257,7 +256,7 @@ scheme_string(const char *s)
 ScmObject *
 scheme_procedure(scheme_function_t fn)
 {
-    ScmProcedure *obj = SCM_NEW_OBJECT(ScmProcedure);
+    ScmProcedure *obj = SCM_NEW(ScmProcedure);
     SCM_SET_TAG(obj, SCM_TYPE_PROCEDURE);
     obj->fn = fn;
     return (ScmObject *)obj;
@@ -266,7 +265,7 @@ scheme_procedure(scheme_function_t fn)
 ScmObject *
 scheme_syntax(scheme_function_t fn)
 {
-    ScmSyntax *obj = SCM_NEW_OBJECT(ScmSyntax);
+    ScmSyntax *obj = SCM_NEW(ScmSyntax);
     SCM_SET_TAG(obj, SCM_TYPE_SYNTAX);
     obj->fn = fn;
     return (ScmObject *)obj;

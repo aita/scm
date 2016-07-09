@@ -3,13 +3,13 @@
 ScmObject *
 scheme_syntax_if(ScmObject *expr)
 {
-    if (expr == SCM_NULL)
+    if (SCM_NULLP(expr))
         goto error;
-    if (SCM_CDR(expr) == SCM_NULL)
+    if (SCM_NULLP(SCM_CDR(expr)))
         goto error;
-    if (SCM_CDDR(expr) == SCM_NULL)
+    if (SCM_NULLP(SCM_CDDR(expr)))
         goto error;
-    if (SCM_CDDDR(expr) != SCM_NULL)
+    if (!SCM_NULLP(SCM_CDDDR(expr)))
         goto error;
 
     ScmObject *cond_expr = SCM_CAR(expr);
@@ -31,11 +31,11 @@ error:
 ScmObject *
 scheme_syntax_define(ScmObject *expr)
 {
-    if (expr == SCM_NULL)
+    if (SCM_NULLP(expr))
         goto error;
-    if (SCM_CDR(expr) == SCM_NULL)
+    if (SCM_NULLP(SCM_CDR(expr)))
         goto error;
-    if (SCM_CDDR(expr) != SCM_NULL)
+    if (!SCM_NULLP(SCM_CDDR(expr)))
         goto error;
 
     ScmObject *symbol = SCM_CAR(expr);

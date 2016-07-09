@@ -7,21 +7,33 @@
 #define SCM_NULL NULL
 
 #define SCM_OBJECT_HEADER scheme_tag_t tag;
-#define SCM_TYPE(obj) ((obj != SCM_NULL) ? obj->tag : SCM_TYPE_NULL)
-
-#define SCM_NEW_OBJECT(SCM_TYPE) \
+#define SCM_NEW(SCM_TYPE) \
     (SCM_TYPE *)scheme_malloc(sizeof(SCM_TYPE))
 
-#define SCM_SET_TAG(OBJ, TAG) \
+#define SCM_TAG(obj) (obj->tag)
+#define SCM_SET_TAG(obj, tag) \
     do { \
-        OBJ->tag = TAG; \
+        SCM_TAG(obj) = tag;  \
     } while(0)
+
+#define SCM_TYPE(obj) ((obj != SCM_NULL) ? SCM_TAG(obj) : SCM_TYPE_NULL)
 
 #define SCM_INT(obj) (((ScmInt *)obj)->val)
 #define SCM_SYMBOL_NAME(obj) (ScmObject *)(((ScmSymbol *)obj)->name)
 #define SCM_ERROR_MESSAGE(obj) (ScmObject *)(((ScmError *)obj)->message)
 
-#define SCM_ERRORP(obj) (SCM_TYPE(obj) == SCM_TYPE_ERROR)
+#define SCM_NULLP(obj) (obj == SCM_NULL)
+
+#define SCM_TYPE_CHECK(type, obj) (SCM_TYPE(obj) == SCM_TYPE_##type)
+#define SCM_INTP(obj) SCM_TYPE_CHECK(INT, obj)
+#define SCM_SYMBOLP(obj) SCM_TYPE_CHECK(SYMBOL, obj)
+#define SCM_STRINGP(obj) SCM_TYPE_CHECK(STRING, obj)
+#define SCM_PAIRP(obj) SCM_TYPE_CHECK(PAIR, obj)
+#define SCM_PORTP(obj) SCM_TYPE_CHECK(PORT, obj)
+#define SCM_PROCEDUREP(obj) SCM_TYPE_CHECK(PROCEDURE, obj)
+#define SCM_CLOSUREP(obj) SCM_TYPE_CHECK(CLOSURE, obj)
+#define SCM_SYNTAXP(obj) SCM_TYPE_CHECK(SYNTAX, obj)
+#define SCM_ERRORP(obj) SCM_TYPE_CHECK(ERROR, obj)
 
 #define SCM_CAR(obj) (((ScmPair *)obj)->car)
 #define SCM_CDR(obj) (((ScmPair *)obj)->cdr)
