@@ -1,7 +1,7 @@
 #include <scheme.h>
 
 ScmObject *
-scheme_syntax_if(ScmObject *expr)
+scheme_syntax_if(ScmObject *expr, ScmObject *env)
 {
     if (SCM_NULLP(expr))
         goto error;
@@ -16,33 +16,36 @@ scheme_syntax_if(ScmObject *expr)
     ScmObject *then_expr = SCM_CADR(expr);
     ScmObject *else_expr = SCM_CADDR(expr);
 
-    ScmObject *cond = scheme_eval(cond_expr);
+    ScmObject *cond = scheme_eval(cond_expr, env);
     if (cond != SCM_NULL) {
-        return scheme_eval(then_expr);
+        return scheme_eval(then_expr, env);
     } else {
-        return scheme_eval(else_expr);
+        return scheme_eval(else_expr, env);
     }
 
 error:
     return scheme_error("syntax error");
-;
 }
 
 ScmObject *
-scheme_syntax_define(ScmObject *expr)
+scheme_syntax_define(ScmObject *expr, ScmObject *env)
 {
     if (SCM_NULLP(expr))
         goto error;
-    if (SCM_NULLP(SCM_CDR(expr)))
-        goto error;
-    if (!SCM_NULLP(SCM_CDDR(expr)))
-        goto error;
 
-    ScmObject *symbol = SCM_CAR(expr);
-    ScmObject *value = scheme_eval(SCM_CADR(expr));
+    ScmObject *symbol, *value;
+    if (SCM_SYMBOLP(SCM_CAR(expr))) {
+        symbol = SCM_CAR(expr);
+        value = scheme_eval(SCM_CADR(expr), env);
+    } else if (SCM_PAIRP(SCM_CAR(expr))) {
+        symbol = SCM_CAAR(expr);
+        value = scheme_closure(SCM_CDAR(expr), SCM_CDR(expr));
+    } else {
+        goto error;
+    }
     if (SCM_ERRORP(value))
         return value;
-    scheme_define(symbol, value);
+    scheme_define(symbol, value, env);
     return value;
 
 error:

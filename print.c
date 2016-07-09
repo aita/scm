@@ -29,6 +29,9 @@ scheme_print_object(ScmObject *obj)
     case SCM_TYPE_PROCEDURE:
         printf("<procedure: %x>", obj);
         break;
+    case SCM_TYPE_SYNTAX:
+        printf("<procedure: %x>", obj);
+        break;
     default:
         printf("<unknown>");
     }

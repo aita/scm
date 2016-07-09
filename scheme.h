@@ -63,6 +63,7 @@ typedef unsigned long scheme_uint_t;
 typedef unsigned long scheme_tag_t;
 typedef unsigned char scheme_char_t;
 typedef ScmObject *(*scheme_function_t)(ScmObject *);
+typedef ScmObject *(*scheme_syntax_t)(ScmObject *, ScmObject *);
 
 typedef struct ScmObject {
     SCM_OBJECT_HEADER
@@ -90,15 +91,21 @@ typedef struct ScmPair {
     ScmObject *cdr;
 } ScmPair;
 
+typedef struct ScmSyntax {
+    SCM_OBJECT_HEADER
+    scheme_syntax_t fn;
+} ScmSyntax;
+
 typedef struct ScmProcedure {
     SCM_OBJECT_HEADER
     scheme_function_t fn;
 } ScmProcedure;
 
-typedef struct ScmSyntax {
+typedef struct ScmClosure {
     SCM_OBJECT_HEADER
-    scheme_function_t fn;
-} ScmSyntax;
+    ScmObject *params;
+    ScmObject *body;
+} ScmClosure;
 
 typedef struct ScmError {
     SCM_OBJECT_HEADER
@@ -113,20 +120,23 @@ typedef struct SCM {
 SCM *scheme;
 
 int scheme_init();
-void scheme_define(ScmObject *symbol, ScmObject *value);
 void scheme_register(const char *name, ScmObject *obj);
-ScmObject *scheme_eval(ScmObject *obj);
-ScmObject *scheme_apply(ScmObject *proc, ScmObject *args);
-int scheme_print_object(ScmObject *obj);
+void scheme_define(ScmObject *symbol, ScmObject *value, ScmObject *env);
+ScmObject *scheme_eval(ScmObject *obj, ScmObject *env);
+ScmObject *scheme_apply(ScmObject *proc, ScmObject *args, ScmObject *env);
 
 // scheme object constructors
 ScmObject *scheme_int(int i);
 ScmObject *scheme_string(const char *s);
 ScmObject *scheme_symbol(const char *name);
 ScmObject *scheme_cons(ScmObject *car, ScmObject *cdr);
+ScmObject *scheme_syntax(scheme_syntax_t fn);
 ScmObject *scheme_procedure(scheme_function_t fn);
-ScmObject *scheme_syntax(scheme_function_t fn);
+ScmObject *scheme_closure(ScmObject *params, ScmObject *body);
+
+// utility functions
 ScmObject *scheme_error(const char *message);
+int scheme_print_object(ScmObject *obj);
 
 // string functions
 int scheme_strcmp(const ScmObject *obj, const char *s);

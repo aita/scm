@@ -18,5 +18,6 @@ main(int argc, char **argv)
         }
     }
     int ret = yyparse();
+    // scheme_print_object(scheme->env);
     return ret;
 }

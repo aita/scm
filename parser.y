@@ -1,5 +1,5 @@
 %{
-#include "scheme.h"
+#include <scheme.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -28,7 +28,7 @@ int yylex(void);
 toplevel:
     | toplevel expr
     {
-        scheme_eval($2);
+        scheme_eval($2, scheme->env);
     }
 
 expr: atom | pair
