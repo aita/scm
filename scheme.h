@@ -112,12 +112,12 @@ typedef struct ScmError {
     ScmString *message;
 } ScmError;
 
-typedef struct SCM {
+typedef struct SCHEME {
     ScmObject *env;
     ScmObject *symbols;
-} SCM;
+} SCHEME;
 
-SCM *scheme;
+extern SCHEME *scheme;
 
 int scheme_init();
 void scheme_register(const char *name, ScmObject *obj);

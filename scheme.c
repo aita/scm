@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 
-SCM *scheme;
+SCHEME *scheme = NULL;
 
 // syntax functions
 ScmObject *scheme_syntax_if(ScmObject *expr, ScmObject *env);
@@ -23,7 +23,7 @@ static ScmObject *scheme_apply_closure(ScmObject *obj, ScmObject *args, ScmObjec
 int
 scheme_init()
 {
-    scheme = scheme_malloc(sizeof(SCM));
+    scheme = scheme_malloc(sizeof(SCHEME));
     if (scheme == NULL)
         return 0;
     scheme->env = scheme_cons(SCM_NULL, SCM_NULL);
@@ -66,7 +66,6 @@ lookup(ScmObject *symbol, ScmObject *env)
 static ScmObject *
 lookup_cell(ScmObject *symbol, ScmObject *env)
 {
-    ScmObject *frame;
     for (; !SCM_NULLP(env); env = SCM_CDR(env)) {
         ScmObject *frame = SCM_CAR(env);
         for (; !SCM_NULLP(frame); frame = SCM_CDR(frame)) {
@@ -85,7 +84,8 @@ scheme_define(ScmObject *symbol, ScmObject *value, ScmObject *env)
     if (!SCM_NULLP(cell)) {
         SCM_CDR(cell) = value;
     } else {
-        SCM_CAR(env) = scheme_cons(scheme_cons(symbol, value), SCM_CAR(env));
+        cell = scheme_cons(symbol, value);
+        SCM_CAR(env) = scheme_cons(cell, SCM_CAR(env));
     }
 }
 
@@ -188,12 +188,6 @@ scheme_eval_symbol(ScmObject *obj, ScmObject *env)
     ScmObject *var = lookup(obj, env);
     if (SCM_NULLP(var)) {
         ScmSymbol *symbol = (ScmSymbol *)obj;
-        /*
-        fprintf(stderr, "Unbound variable: ");
-        fwrite(symbol->name->s, 1, symbol->name->len, stderr);
-        fprintf(stderr, "\n");
-        return SCM_NULL;
-        */
         return scheme_error("unbound variable");
     }
     return var;
