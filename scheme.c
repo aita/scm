@@ -115,7 +115,8 @@ scheme_apply(ScmObject *obj, ScmObject *args, ScmObject *env)
         }
         return scheme_apply_closure(obj, args, env);
     default:
-        return scheme_error("Wrong type to apply.");
+        scheme_error("Wrong type to apply.");
+        return SCM_NULL;
     }
 }
 
@@ -152,7 +153,8 @@ scheme_eval_arguments(ScmObject *args, ScmObject *env)
             break;
         }
         if (!SCM_PAIRP(args)) {
-            return scheme_error("syntax error");
+            scheme_error("syntax error");
+            return;
         }
         SCM_CDR(cur) = scheme_cons(SCM_NULL, SCM_NULL);
         cur = SCM_CDR(cur);
@@ -163,23 +165,22 @@ scheme_eval_arguments(ScmObject *args, ScmObject *env)
 ScmObject *
 scheme_eval(ScmObject *obj, ScmObject *env)
 {
-    ScmObject *ret = SCM_NULL;
-    switch (SCM_TYPE(obj)) {
-    case SCM_TYPE_SYMBOL:
-        ret = scheme_eval_symbol(obj, env);
-        break;
-    case SCM_TYPE_PAIR:
-        ret = scheme_eval_pair(obj, env);
-        break;
-    default:
-        ret = obj;
-    }
-    if (SCM_ERRORP(ret)) {
-        ScmString *message = (ScmString *)SCM_ERROR_MESSAGE(ret);
+    if (setjmp(scheme->jmp) == 0) {
+        switch (SCM_TYPE(obj)) {
+        case SCM_TYPE_SYMBOL:
+            return scheme_eval_symbol(obj, env);
+        case SCM_TYPE_PAIR:
+            return scheme_eval_pair(obj, env);
+        default:
+            return obj;
+        }
+    } else {
+        // on error
+        ScmString *message = (ScmString *)SCM_ERROR_MESSAGE(scheme->err);
         fwrite(message->s, 1, message->len, stderr);
         fprintf(stderr, "\n");
+        return SCM_NULL;
     }
-    return ret;
 }
 
 static ScmObject *
@@ -187,8 +188,8 @@ scheme_eval_symbol(ScmObject *obj, ScmObject *env)
 {
     ScmObject *var = lookup(obj, env);
     if (SCM_NULLP(var)) {
-        ScmSymbol *symbol = (ScmSymbol *)obj;
-        return scheme_error("unbound variable");
+        scheme_error("unbound variable");
+        return SCM_NULL;
     }
     return var;
 }
@@ -211,7 +212,8 @@ scheme_eval_pair(ScmObject *obj, ScmObject *env)
     case SCM_TYPE_CLOSURE:
         return scheme_apply(car, SCM_CDR(obj), env);
     default:
-        return scheme_error("syntax error");
+        scheme_error("syntax error");
+        return SCM_NULL;
     }
 }
 
@@ -232,13 +234,15 @@ scheme_eval_syntax(ScmObject *syntax, ScmObject *expr, ScmObject *env)
     return ((ScmSyntax *)syntax)->fn(expr, env);
 }
 
-ScmObject *
+void
 scheme_error(const char *message)
 {
-    ScmError *obj = SCM_NEW(ScmError);
-    SCM_SET_TAG(obj, SCM_TYPE_ERROR);
-    obj->message = (ScmString *)scheme_string(message);
-    return (ScmObject *)obj;
+    ScmError *err = SCM_NEW(ScmError);
+    SCM_SET_TAG(err, SCM_TYPE_ERROR);
+    err->message = (ScmString *)scheme_string(message);
+    scheme->err = (ScmObject *)err;
+    longjmp(scheme->jmp, 1);
+    return (ScmObject *)err;
 }
 
 ScmObject *

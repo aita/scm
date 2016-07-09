@@ -1,6 +1,8 @@
 #ifndef _SCHEME_H_
 #define _SCHEME_H_
 #include <stdlib.h>
+#include <setjmp.h>
+
 
 #define scheme_malloc malloc
 #define scheme_free free
@@ -58,12 +60,24 @@
 struct ScmObject;
 typedef struct ScmObject ScmObject;
 
+
 typedef int scheme_int_t;
 typedef unsigned long scheme_uint_t;
 typedef unsigned long scheme_tag_t;
 typedef unsigned char scheme_char_t;
 typedef ScmObject *(*scheme_function_t)(ScmObject *);
 typedef ScmObject *(*scheme_syntax_t)(ScmObject *, ScmObject *);
+
+
+typedef struct SCHEME {
+    ScmObject *env;
+    ScmObject *symbols;
+    ScmObject *err;
+    jmp_buf jmp;
+} SCHEME;
+
+extern SCHEME *scheme;
+
 
 typedef struct ScmObject {
     SCM_OBJECT_HEADER
@@ -112,12 +126,6 @@ typedef struct ScmError {
     ScmString *message;
 } ScmError;
 
-typedef struct SCHEME {
-    ScmObject *env;
-    ScmObject *symbols;
-} SCHEME;
-
-extern SCHEME *scheme;
 
 int scheme_init();
 void scheme_register(const char *name, ScmObject *obj);
@@ -135,7 +143,7 @@ ScmObject *scheme_procedure(scheme_function_t fn);
 ScmObject *scheme_closure(ScmObject *params, ScmObject *body);
 
 // utility functions
-ScmObject *scheme_error(const char *message);
+void scheme_error(const char *message);
 int scheme_print_object(ScmObject *obj);
 
 // string functions

@@ -8,11 +8,15 @@ scheme_plus(ScmObject *args)
     for (next = args; !SCM_NULLP(next); next = SCM_CDR(next)) {
         ScmObject *obj = SCM_CAR(next);
         if (!SCM_INTP(obj)) {
-            return scheme_error("Wrong type of argument");
+            goto error;
         }
         SCM_INT(ret) += SCM_INT(obj);
     }
     return ret;
+
+error:
+    scheme_error("Wrong type of argument");
+    return SCM_NULL;
 }
 
 ScmObject *
@@ -24,14 +28,18 @@ scheme_minus(ScmObject *args)
     ScmObject *next;
     ScmObject *ret = SCM_CAR(args);
     if (!SCM_INTP(ret)) {
-        return scheme_error("Wrong type of argument");
+        goto error;
     }
     for (next = SCM_CDR(args); !SCM_NULLP(next); next = SCM_CDR(next)) {
         ScmObject *obj = SCM_CAR(next);
         if (!SCM_INTP(obj)) {
-            return scheme_error("Wrong type of argument");
+            goto error;
         }
         SCM_INT(ret) -= SCM_INT(obj);
     }
     return ret;
+
+error:
+    scheme_error("Wrong type of argument");
+    return SCM_NULL;
 }

@@ -24,7 +24,8 @@ scheme_syntax_if(ScmObject *expr, ScmObject *env)
     }
 
 error:
-    return scheme_error("syntax error");
+    scheme_error("syntax error");
+    return SCM_NULL;
 }
 
 ScmObject *
@@ -49,5 +50,6 @@ scheme_syntax_define(ScmObject *expr, ScmObject *env)
     return value;
 
 error:
-    return scheme_error("syntax error");
+    scheme_error("syntax error");
+    return SCM_NULL;
 }
